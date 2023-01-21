@@ -31,11 +31,13 @@ namespace nbt {
 	};
 
 
+    struct TagEnd{};
+
 	/// <summary>
-	/// Represents an NBT node. Payload is a union so check the type before trying
-	/// to access!
 	/// </summary>
 	struct nbt_node {
+
+        /// special struct for holding a compound
         struct compound {
             std::vector<nbt_node> content;
 
@@ -65,12 +67,25 @@ namespace nbt {
                 node.name = name;
                 content.push_back(node);
             }
-                        
+
             std::vector<nbt_node>::iterator begin() { return content.begin(); }
             std::vector<nbt_node>::iterator end() { return content.end(); }
         };
 
+
+        // init
+		nbt_node()  { }
+        nbt_node(int32_t i) :  payload(i) { }
+        nbt_node(int64_t l) :  payload(l) { }
+        nbt_node(float f) :  payload(f) { }
+        nbt_node(double d) :  payload(d) { }
+        nbt_node(std::vector<byte> b_array) :  payload(b_array) { }
+        nbt_node(std::vector<int32_t> i32_array) :  payload(i32_array) { }
+        nbt_node(std::vector<int64_t> i64_array) :  payload(i64_array) { }
+        nbt_node(compound&& comp): payload(comp) {}
+
         typedef variant<
+                TagEnd,
                 byte,
                 int16_t,
                 int32_t,
@@ -85,37 +100,28 @@ namespace nbt {
                 std::vector<int64_t>
             > payload_t;
 
-		template<typename T>
-		T& operator[](int index);
+        NbtTagType tagtype() const {
+            return static_cast<NbtTagType>(payload.index());
+        }
 
         template<uint8_t I>
         const auto& get() const {
-            return std::get<I-1>(payload);
+            return std::get<I>(payload);
         }
 
         template<uint8_t I>
         auto& get(){
-            return std::get<I-1>(payload);
+            return std::get<I>(payload);
         }
 
-		nbt_node() : tagtype(NbtTagType::TAG_END) { }
-		explicit nbt_node(NbtTagType t_) : tagtype(t_) { }
-        nbt_node(int32_t i) : tagtype(TAG_Int), payload(i) { }
-        nbt_node(int64_t l) : tagtype(TAG_Long), payload(l) { }
-        nbt_node(float f) : tagtype(TAG_Float), payload(f) { }
-        nbt_node(double d) : tagtype(TAG_Double), payload(d) { }
-        nbt_node(std::vector<byte> b_array) : tagtype(TAG_Byte_Array), payload(b_array) { }
-        nbt_node(std::vector<int32_t> i32_array) : tagtype(TAG_Int_Array), payload(i32_array) { }
-        nbt_node(std::vector<int64_t> i64_array) : tagtype(TAG_Long_Array), payload(i64_array) { }
 
 		std::string pretty_print(uint16_t level = 0) const;
 
 		nbt_node* operator[](const std::string& name);
         nbt_node* at(const std::string& name);
 
-        payload_t payload;
-		std::string name;
-		NbtTagType tagtype;
+        payload_t payload = TagEnd{};
+		std::string name = {};
 	};
 
 	//nbt_node& get_child(const std::string& name, const nbt_node& parent);

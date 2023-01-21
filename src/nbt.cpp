@@ -1,4 +1,4 @@
-#include "nbt.h"
+#include "../include/nbt.h"
 #include "common.h"
 #include <cstdint>
 #include <cstdio>
@@ -78,7 +78,7 @@ std::string nbt_node::pretty_print(uint16_t level) const {
   if (!name.empty())
     ss << "\33[1m" << name << "\33[0m: ";
 
-  switch (tagtype) {
+  switch (tagtype()) {
   case NbtTagType::TAG_END:
     ss << "END";
     break;
@@ -133,7 +133,7 @@ std::string nbt_node::pretty_print(uint16_t level) const {
     break;
   }
   default:
-    ss << "TAG " << (int)tagtype << " not implemented";
+    ss << "TAG " << (int)tagtype() << " not implemented";
   }
   return ss.str();
 }
@@ -262,7 +262,7 @@ void write_name(std::string const &name, std::vector<char> &buffer) {
 }
 
 void write_payload(const nbt_node &node, std::vector<char> &buffer) {
-  switch (node.tagtype) {
+  switch (node.tagtype()) {
   case NbtTagType::TAG_Byte: {
     buffer.push_back(std::get<byte>(node.payload));
     break;
@@ -317,7 +317,7 @@ void write_payload(const nbt_node &node, std::vector<char> &buffer) {
   case NbtTagType::TAG_List: {
     auto const payload = node.get<NbtTagType::TAG_List>();
     // get type from first element
-    auto content_id = payload[0].tagtype;
+    auto content_id = payload[0].tagtype();
     auto len = static_cast<int32_t>(payload.size());
     push_swapped4(buffer, &len);
     buffer.push_back(static_cast<char>(content_id));
@@ -411,7 +411,7 @@ void get_payload(const NbtTagType id, const char *&buffer, nbt_node *node) {
     while (true) {
       auto &content = node->get<TAG_Compound>().content;
       content.push_back(read_node(buffer));
-      if (content[content.size() - 1].tagtype == NbtTagType::TAG_END)
+      if (content[content.size() - 1].tagtype() == NbtTagType::TAG_END)
         break;
     }
     break;
@@ -461,7 +461,7 @@ void get_payload(const NbtTagType id, const char *&buffer, nbt_node *node) {
 }
 
 void write_node(const nbt_node &node, std::vector<char> &buffer) {
-  buffer.push_back(static_cast<char>(node.tagtype));
+  buffer.push_back(static_cast<char>(node.tagtype()));
   write_name(node.name, buffer);
 
   write_payload(node, buffer);

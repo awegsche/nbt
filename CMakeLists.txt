@@ -25,7 +25,7 @@ add_library (nbtlib
     "src/nbt.cpp"
     )
 
-target_inlcude_directories(nbtlib PUBLIC
+target_include_directories(nbtlib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)
@@ -34,7 +34,7 @@ target_link_libraries(nbtlib PRIVATE
 		spdlog::spdlog
 		ZLIB::ZLIB)
 
-set_target_properties(nbtlib POPERTIES
+set_target_properties(nbtlib PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1)
 
