@@ -15,7 +15,7 @@ jobs:
     - name: Run vcpkg
       uses: lukka/run-vcpkg@v10
       with:
-        vcpkgDirectory: '${{ github.workspace }}/nbt/ext/vcpkg'
+        vcpkgDirectory: '${{ github.workspace }}/ext/vcpkg'
         vcpkgJsonGlob: '**/vcpkg.json'
         vcpkgArguments: 'zlib spdlog'
         runVcpkgInstall: true
