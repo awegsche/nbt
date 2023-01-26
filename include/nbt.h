@@ -65,6 +65,7 @@ struct nbt_node {
 
     // ---- Init -----------------------------------------------------------------------------------
     nbt_node() {}
+    nbt_node(byte b) : payload(b) {}
     nbt_node(int32_t i) : payload(i) {}
     nbt_node(int64_t l) : payload(l) {}
     nbt_node(float f) : payload(f) {}
