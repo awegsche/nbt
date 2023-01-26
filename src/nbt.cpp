@@ -1,20 +1,16 @@
 #include "../include/nbt.h"
 #include "common.h"
-#include "nbt.h"
 #include <cstdint>
-#include <cstdio>
-#include <execution>
 #include <fstream>
 #include <iostream>
 #include <numeric>
-#include <sstream>
 #include <vector>
 #include <zconf.h>
 #include <zlib.h>
 
 #ifdef _MSC_VER
 #include <intrin.h>
-template <typename T, typename U> T __reint(U _val) { return *reinterpret_cast<T *>(&U); }
+template <typename T, typename U> T __reint(U _val) { return *reinterpret_cast<T *>(&_val); }
 template <typename T> unsigned long __swap4(T *_val) {
     return _byteswap_ulong(*reinterpret_cast<unsigned long *>(_val));
 }
@@ -495,9 +491,9 @@ nbt_node read_from_file(const string &filename) {
     case Z_OK:
         break;
     case Z_MEM_ERROR:
-        std::cout << "z_mem_error" << std::endl;
+        throw std::runtime_error("Zlib::z_mem_error");
     case Z_BUF_ERROR:
-        std::cout << "z_buf_error" << std::endl;
+        throw std::runtime_error("Zlib::z_buf_error");
     }
 
     const char *read_buff = reinterpret_cast<char *>(buffer_uncompressed);
@@ -517,8 +513,8 @@ void write_to_file(const nbt_node &node, const string &filename) {
     nbt::write_node(node, buffer);
 
     uLong length_uncompressed        = buffer.size();
-    uLongf length_compressed         = buffer.size();
-    unsigned char *compressed_buffer = new unsigned char[buffer.size()]; // worst case: compressed has the same size as
+    uLongf length_compressed         = std::max((size_t)256, buffer.size());
+    unsigned char *compressed_buffer = new unsigned char[length_compressed]; // worst case: compressed has the same size as
 
     auto z_result = compress(compressed_buffer, &length_compressed, buffer.data(), length_uncompressed);
     switch (z_result) {
