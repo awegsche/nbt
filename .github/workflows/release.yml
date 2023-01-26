@@ -1,0 +1,19 @@
+name: CompileMyProject
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        platform: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: Run vcpkg
+      uses: lukka/run-vcpkg@v10
+      with:
+        vcpkgArguments: 'zlib spdlog'
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
