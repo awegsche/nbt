@@ -35,6 +35,19 @@
       }
     },
     {
+      "name": "make",
+      "displayName": "Make",
+      "description": "Configure with vcpkg toolchain",
+      "binaryDir": "${sourceDir}/builds/${presetName}",
+      "generator": "Make",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        }
+      }
+    },
+    {
       "name": "msbuild-vcpkg",
       "displayName": "MSBuild (vcpkg toolchain) Configure Settings",
       "description": "Configure with VS generators and with vcpkg toolchain",
