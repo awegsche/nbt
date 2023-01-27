@@ -1,4 +1,4 @@
-# nbt
+# nbt ![release](https://github.com/awegsche/nbt/actions/workflows/release.yml/badge.svg)
 
 Yet another nbt library, for my personal use and learning experience.
 
