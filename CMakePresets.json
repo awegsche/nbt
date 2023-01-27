@@ -39,7 +39,7 @@
       "displayName": "Make",
       "description": "Configure with vcpkg toolchain",
       "binaryDir": "${sourceDir}/builds/${presetName}",
-      "generator": "Make",
+      "generator": "Unix Makefiles",
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": {
           "type": "FILEPATH",
