@@ -4,7 +4,7 @@ Yet another nbt library, for my personal use and learning experience.
 
 ## Disclaimer
 
-I created this project practice C++ development.
+I created this project to practice C++ development.
 If you are interested in an NBT library for your language, checkout
 [this wiki entry](https://wiki.vg/NBT) ,
 because "There are many, many libraries for manipulating NBT, written in several languages, and often several per language."
@@ -32,7 +32,7 @@ nbt::write_to_file(nbt_node{root}, "filename.nbt");
 
 ## Road map and known issues
 
-- Add `std::map` like insertion
+- `std::map` like insertion
 
   ```cpp
   node["width"] = 1024;
