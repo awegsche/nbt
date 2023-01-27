@@ -67,6 +67,12 @@
   ],
   "buildPresets": [
     {
+      "name": "make",
+      "configurePreset": "make",
+      "displayName": "Build with Make",
+      "description": "Build with Make"
+    },
+     {
       "name": "ninja",
       "configurePreset": "ninja",
       "displayName": "Build with Ninja",
