@@ -17,6 +17,6 @@ jobs:
     - name: Run vcpkg
       run: cd ${{ github.workspace }}/ext/vcpkg && ./bootstrap-vcpkg.sh && ./vcpkg install
     - name: Run CMake
-      run: cd ${{ github.workspace }} && cmake -B build -DCMAKE_TOOLCHAIN_FILE ext/vcpkg/scripts/buildsystems/vcpkg.cmake
+      run: cd ${{ github.workspace }} && cmake -B build -DCMAKE_TOOLCHAIN_FILE=ext/vcpkg/scripts/buildsystems/vcpkg.cmake
     - name: Run Make
       run: cd ${{ github.workspace }} && cmake --build build
