@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <numeric>
 #include <vector>
 #include <zconf.h>
@@ -154,7 +155,7 @@ std::vector<nbt_node> load_region(const char *filename) {
     std::vector<nbt_node> chunks;
 
     for (size_t i = 0; i < CHUNKS_IN_REGION; i++) {
-        auto location = _byteswap_ulong(*reinterpret_cast<int *>(buffer + i * 4));
+        uint32_t location = __swap4(reinterpret_cast<uint32_t *>(buffer + i * 4));
         auto offset   = static_cast<size_t>(location >> 8);
         if (offset == 0)
             continue;

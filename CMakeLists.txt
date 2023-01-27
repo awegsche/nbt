@@ -6,9 +6,8 @@ cmake_minimum_required (VERSION 3.8)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 
-project("nbt" VERSION 1.0.0 LANGUAGES CXX)
+project("nbt" VERSION 1.0.0 )
 
-set(CMAKE_CXX_STANDARD 23)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
@@ -18,8 +17,8 @@ find_package(spdlog CONFIG REQUIRED)
 # -- library for usage in other projects -----------------------------------------------------------
 # --------------------------------------------------------------------------------------------------
 
-include_directories(src)
-include_directories(include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_library (nbtlib
     STATIC
@@ -28,7 +27,6 @@ add_library (nbtlib
 
 target_include_directories(nbtlib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
     PRIVATE src)
 
 target_link_libraries(nbtlib PRIVATE
