@@ -93,6 +93,10 @@
   ],
   "testPresets": [
     {
+      "name": "make",
+      "configurePreset": "make"
+    },
+    {
       "name": "ninja",
       "configurePreset": "ninja"
     },
