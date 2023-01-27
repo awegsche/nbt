@@ -13,7 +13,7 @@ jobs:
       with:
         submodules: 'recursive'
     - name: discover
-      run: ls  ${{ github.workspace }}
+      run: ls  ${{ github.workspace }}/ext/vcpkg
     - name: Run vcpkg
       run: cd ${{ github.workspace }}/ext/vcpkg && ./bootstrap.sh && ./vcpkg install zlib spdlog
     - name: Run CMake
