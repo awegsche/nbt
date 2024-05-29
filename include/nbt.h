@@ -55,6 +55,9 @@ struct compound {
 
     std::vector<nbt_node>::iterator begin();
     std::vector<nbt_node>::iterator end();
+
+    std::vector<nbt_node>::const_iterator begin() const;
+    std::vector<nbt_node>::const_iterator end() const;
 };
 
 struct nbt_node {
@@ -110,7 +113,7 @@ struct nbt_node {
     std::string pretty_print(uint16_t level = 0) const;
 
     payload_t payload = TagEnd{};
-    std::string name  = {};
+    std::string name;
 };
 
 /// Load an nbt_node from file

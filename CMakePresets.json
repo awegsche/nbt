@@ -1,118 +1,107 @@
 {
-  "version": 3,
-  "cmakeMinimumRequired": {
-    "major": 3,
-    "minor": 21,
-    "patch": 0
-  },
-  "configurePresets": [
-    {
-      "name": "ninja",
-      "displayName": "Ninja Configure Settings",
-      "description": "Sets build and install directories",
-      "binaryDir": "${sourceDir}/builds/${presetName}",
-      "generator": "Ninja"
+    "version": 8,
+    "$schema": "https://cmake.org/cmake/help/latest/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
     },
-    {
-      "name": "ninja-toolchain",
-      "displayName": "Ninja Configure Settings with toolchain",
-      "description": "Sets build and install directories",
-      "binaryDir": "${sourceDir}/builds/${presetName}-toolchain",
-      "generator": "Ninja",
-      "toolchainFile": "$env{TOOLCHAINFILE}"
-    },
-    {
-      "name": "ninja-multi-vcpkg",
-      "displayName": "Ninja Multi-Config Configure Settings",
-      "description": "Configure with vcpkg toolchain",
-      "binaryDir": "${sourceDir}/builds/${presetName}",
-      "generator": "Ninja",
-      "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": {
-          "type": "FILEPATH",
-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+    "configurePresets": [
+        {
+            "name": "clang",
+            "hidden": true,
+            "displayName": "Clang (vcpkg toolchain) Base Configure Settings",
+            "description": "Configure with clang",
+            "binaryDir": "${sourceDir}/builds/${presetName}",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_TOOLCHAIN_FILE": {
+                    "type": "FILEPATH",
+                    "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+                }
+            }
+        },
+        {
+            "name": "debug-clang",
+            "inherits": "clang",
+            "displayName": "Debug Clang (vcpkg toolchain) Configure Settings",
+            "description": "Configure with clang",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release-clang",
+            "inherits": "clang",
+            "displayName": "Release Clang (vcpkg toolchain) Configure Settings",
+            "description": "Configure with clang",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "msvc",
+            "displayName": "MSBuild (vcpkg toolchain) Configure Settings",
+            "description": "Configure with VS generators and with vcpkg toolchain",
+            "binaryDir": "${sourceDir}/builds/${presetName}",
+            "generator": "Visual Studio 17 2022",
+            "architecture": {
+                "strategy": "set",
+                "value": "x64"
+            },
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": {
+                    "type": "FILEPATH",
+                    "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+                }
+            }
+        },
+        {
+            "name": "debug-msvc",
+            "inherits": "msvc",
+            "displayName": "MSBuild (vcpkg toolchain) Configure Settings",
+            "description": "Debug Configure with VS generators and with vcpkg toolchain",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release-msvc",
+            "inherits": "msvc",
+            "displayName": "MSBuild (vcpkg toolchain) Configure Settings",
+            "description": "Release Configure with VS generators and with vcpkg toolchain",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
         }
-      }
-    },
-    {
-      "name": "make",
-      "displayName": "Make",
-      "description": "Configure with vcpkg toolchain",
-      "binaryDir": "${sourceDir}/builds/${presetName}",
-      "generator": "Unix Makefiles",
-      "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": {
-          "type": "FILEPATH",
-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+    ],
+    "buildPresets": [
+        {
+            "name": "debug-clang",
+            "displayName": "Debug Clang build",
+            "configurePreset": "debug-clang",
+            "configuration": "Debug"
+        },
+        {
+            "name": "debug-msvc",
+            "displayName": "Debug MSVC build",
+            "configurePreset": "debug-msvc",
+            "configuration": "Debug"
+        },
+        {
+            "name": "release-clang",
+            "displayName": "release Clang build",
+            "configurePreset": "release-clang",
+            "configuration": "Release"
+        },
+        {
+            "name": "release-msvc",
+            "displayName": "release MSVC build",
+            "configurePreset": "release-msvc",
+            "configuration": "Release"
         }
-      }
-    },
-    {
-      "name": "msbuild-vcpkg",
-      "displayName": "MSBuild (vcpkg toolchain) Configure Settings",
-      "description": "Configure with VS generators and with vcpkg toolchain",
-      "binaryDir": "${sourceDir}/builds/${presetName}",
-      "generator": "Visual Studio 17 2022",
-      "architecture": {
-        "strategy": "set",
-        "value": "x64"
-      },
-      "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": {
-          "type": "FILEPATH",
-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        }
-      }
-    }
-  ],
-  "buildPresets": [
-    {
-      "name": "make",
-      "configurePreset": "make",
-      "displayName": "Build with Make",
-      "description": "Build with Make"
-    },
-     {
-      "name": "ninja",
-      "configurePreset": "ninja",
-      "displayName": "Build with Ninja",
-      "description": "Build with Ninja"
-    },
-    {
-      "name": "ninja-multi-vcpkg",
-      "configurePreset": "ninja-multi-vcpkg",
-      "displayName": "Build ninja-multi-vcpkg",
-      "description": "Build ninja-multi-vcpkg Configurations"
-    },
-    {
-      "name": "ninja-toolchain",
-      "configurePreset": "ninja-toolchain",
-      "displayName": "Build ninja-toolchain",
-      "description": "Build ninja with a toolchain"
-    },
-    {
-      "name": "msbuild-vcpkg",
-      "configurePreset": "msbuild-vcpkg",
-      "displayName": "Build MSBuild",
-      "description": "Build with MSBuild (VS)"
-    }
-  ],
-  "testPresets": [
-    {
-      "name": "make",
-      "configurePreset": "make"
-    },
-    {
-      "name": "ninja",
-      "configurePreset": "ninja"
-    },
-    {
-      "name": "ninja-multi-vcpkg",
-      "configurePreset": "ninja-multi-vcpkg"
-    },
-    {
-      "name": "default-vs",
-      "configurePreset": "msbuild-vcpkg"
-    }
-  ]
+    ]
 }
