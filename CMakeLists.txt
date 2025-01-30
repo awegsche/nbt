@@ -6,7 +6,7 @@ cmake_minimum_required (VERSION 3.8)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 
-project("nbt" VERSION 1.0.0 )
+project("nbt" VERSION 1.0.0 LANGUAGES CXX)
 
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -22,8 +22,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_library (nbtlib
     STATIC
-    "src/nbt.cpp"
-    )
+    #"src/nbt.cpp"
+		#include/field.hpp
+		src/lib.cpp
+		src/field.cpp
+)
 
 target_include_directories(nbtlib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -46,7 +49,27 @@ install (DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nbtlib)
 install(EXPORT NbtLibConfig DESTINATION share/NbtLib/cmake)
 export(TARGETS nbtlib FILE NbtLibConfig.cmake)
 
-# TESTS
+# --------------------------------------------------------------------------------------------------
+# -- test apps -------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------
+
+## add_executable(load_region
+##     "apps/region_test.cpp"
+##     "src/region.cpp"
+## 		include/value.hpp
+## 		include/helpers.hpp
+## )
+##
+## target_link_libraries(load_region PRIVATE
+##     nbtlib
+##     spdlog::spdlog
+##     ZLIB::ZLIB
+## )
+
+# --------------------------------------------------------------------------------------------------
+# -- tests -----------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------
+
 include(FetchContent)
 FetchContent_Declare(
 		googletest
