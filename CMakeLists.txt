@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt : CMake project for omcmeas, include source and define
 # project specific logic here.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
@@ -18,33 +18,34 @@ find_package(spdlog CONFIG REQUIRED)
 # --------------------------------------------------------------------------------------------------
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-add_library (nbtlib
-    STATIC
-    #"src/nbt.cpp"
-		#include/field.hpp
-		src/lib.cpp
-		src/field.cpp
+add_library(nbtlib
+        STATIC
+        src/field.cpp
+        src/compound.cpp
+        src/nbt.hpp
+        src/list.hpp
+        src/end.hpp
+        src/tagtype.hpp
 )
 
 target_include_directories(nbtlib PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE src)
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        PRIVATE src)
 
 target_link_libraries(nbtlib PRIVATE
-		spdlog::spdlog
-		ZLIB::ZLIB)
+        spdlog::spdlog
+        ZLIB::ZLIB)
 
 set_target_properties(nbtlib PROPERTIES
-    VERSION ${PROJECT_VERSION}
-    SOVERSION 1)
+        VERSION ${PROJECT_VERSION}
+        SOVERSION 1)
 
 install(TARGETS nbtlib EXPORT NbtLibConfig
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-install (DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nbtlib)
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nbtlib)
 
 install(EXPORT NbtLibConfig DESTINATION share/NbtLib/cmake)
 export(TARGETS nbtlib FILE NbtLibConfig.cmake)
@@ -72,8 +73,8 @@ export(TARGETS nbtlib FILE NbtLibConfig.cmake)
 
 include(FetchContent)
 FetchContent_Declare(
-		googletest
-		URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+        googletest
+        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -82,14 +83,14 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(test_primitives
-		tests/test_primitives.cpp)
+        tests/test_primitives.cpp)
 
 target_link_libraries(
-		test_primitives
-		GTest::gtest_main
-		spdlog::spdlog
-		ZLIB::ZLIB
-		nbtlib
+        test_primitives PRIVATE
+        GTest::gtest_main
+        spdlog::spdlog
+        ZLIB::ZLIB
+        nbtlib
 )
 
 include(GoogleTest)

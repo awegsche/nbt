@@ -11,145 +11,17 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
+#include <nbt_error.hpp>
 #include <span>
 
 #include "helpers.hpp"
-
-enum NbtTagType : uint8_t {
-    TAG_END = 0,
-    TAG_Byte,
-    TAG_Short,
-    TAG_Int,
-    TAG_Long,
-    TAG_Float,
-    TAG_Double,
-    TAG_Byte_Array,
-    TAG_String,
-    TAG_List,
-    TAG_Compound,
-    TAG_Int_Array,
-    TAG_Long_Array
-};
-
-enum class NbtError {
-    FieldNotFound,
-    NotACompound
-};
-
-struct TagEnd {
-    bool operator==(const TagEnd &) const { return true; }
-};
-
-struct NbtField;
-
-struct NbtCompound {
-    using Fields = std::vector<NbtField>;
-    using const_iterator = Fields::const_iterator;
-
-    Fields fields;
-
-    bool operator==(const NbtCompound &) const = default;
-
-    const_iterator find(std::string_view const key) const;
-
-    const_iterator find_path(std::span<std::string> const path) const;
-
-    const_iterator cbegin() const { return fields.cbegin(); }
-    const_iterator cend() const { return fields.cend(); }
-
-    const_iterator begin() const { return fields.begin(); }
-    const_iterator end() const { return fields.end(); }
-};
-
-
-struct NbtList {
-    using payload_t = std::variant<TagEnd,
-        std::vector<byte>,
-        std::vector<int16_t>,
-        std::vector<int32_t>,
-        std::vector<int64_t>,
-        std::vector<float>,
-        std::vector<double>,
-        std::vector<std::vector<byte> >,
-        std::vector<std::string>,
-        std::vector<NbtList>,
-        std::vector<NbtCompound>,
-        std::vector<std::vector<int32_t> >,
-        std::vector<std::vector<int64_t> > >;
-
-    template<typename TagWrite, typename OutputIt>
-    void to_buffer(OutputIt &buffer) {
-        std::visit(overloaded{
-                       [&](TagEnd) {
-                           *buffer++ = NbtTagType::TAG_END;
-                           const int32_t len = 0;
-                           push_swapped4(buffer, &len);
-                       },
-
-                       [&](std::vector<byte> const &arr) {
-                           *buffer++ = NbtTagType::TAG_Byte;
-                           const auto len = static_cast<int32_t>(arr.size());
-                           push_swapped4(buffer, &len);
-
-                           std::copy(arr.begin(), arr.end(), buffer);
-                           buffer += len;
-                       },
-                       [&](std::vector<int16_t> const &arr) {
-                           *buffer++ = NbtTagType::TAG_Short;
-                           const auto len = static_cast<int32_t>(arr.size());
-                           push_swapped4(buffer, &len);
-
-                           for (auto const i: arr) {
-                               push_swapped2(buffer, &i);
-                           }
-                       },
-                       [&](std::vector<int32_t> const &arr) {
-                           *buffer++ = NbtTagType::TAG_Int;
-                           const auto len = static_cast<int32_t>(arr.size());
-                           push_swapped4(buffer, &len);
-
-                           for (auto const i: arr) {
-                               push_swapped4(buffer, &i);
-                           }
-                       },
-                       [&](std::vector<int64_t> const &arr) {
-                           *buffer++ = NbtTagType::TAG_Long;
-                           const auto len = static_cast<int32_t>(arr.size());
-                           push_swapped4(buffer, &len);
-
-                           for (auto const i: arr) {
-                               push_swapped8(buffer, &i);
-                           }
-                       },
-                       [&](std::vector<float> const &arr) {
-                           *buffer++ = NbtTagType::TAG_Float;
-                           const auto len = static_cast<int32_t>(arr.size());
-                           push_swapped4(buffer, &len);
-
-                           for (auto const i: arr) {
-                               push_swapped4(buffer, &i);
-                           }
-                       },
-                       [&](std::vector<double> const &arr) {
-                           *buffer++ = NbtTagType::TAG_Double;
-                           const auto len = static_cast<int32_t>(arr.size());
-                           push_swapped4(buffer, &len);
-
-                           for (auto const i: arr) {
-                               push_swapped8(buffer, &i);
-                           }
-                       },
-                   }, payload);
-    }
-
-    bool operator==(const NbtList &) const = default;
-
-    payload_t payload;
-};
+#include "end.hpp"
+#include "tagtype.hpp"
+#include "compound.hpp"
+#include "list.hpp"
 
 using NbtValue = std::variant<TagEnd, byte, int16_t, int32_t, int64_t, float, double, std::vector<byte>, std::string,
     NbtList, NbtCompound, std::vector<int32_t>, std::vector<int64_t> >;
-
 
 struct NbtField {
     std::string name;
@@ -167,86 +39,145 @@ struct NbtField {
           , value(value) {
     }
 
+    //template<>
+    //NbtField(std::string_view const name, std::vector<float>&& float_list)
+    //    :name(name), value(NbtList{std::move(float_list)}) {
+
+    //    }
+
     // ---- Access -----------------------------------------------------------------------------------------------------
-    NbtField const &find(std::string_view const key) const {
-        auto const &compound = std::get<NbtCompound>(value);
 
-        const auto found = compound.find(key);
-        if (found == compound.end()) {
-        }
-        return *found;
-    }
+    /// Find a field in this compound
+    ///
+    /// Throws:
+    /// - std::bad_variant_access if `this` is not a compound
+    /// - NbtError::FieldNotFound if there is no field with the given name.
+    ///
+    [[nodiscard]] NbtField const &find(std::string_view const key) const;
 
-    NbtCompound::const_iterator find_path(std::span<std::string> const path) const {
-        auto const &compound = std::get<NbtCompound>(value);
-
-        return compound.find_path(path);
-    }
+    /// Find a field by path in this compound
+    ///
+    /// Throws:
+    /// - std::bad_variant_access if any of the non-leaf fields is not a compound
+    /// - NbtError::FieldNotFound if there is no field with the given name.
+    ///
+    [[nodiscard]] NbtField const &find_path(std::span<std::string> const path) const;
 
     // ---- IO ---------------------------------------------------------------------------------------------------------
 
     template<typename InputIt>
     static NbtField from_buffer(InputIt &buffer) {
-        return {};
+        auto const tag = static_cast<NbtTagType>(*buffer++);
+
+        switch (tag) {
+            case TAG_END:
+                return NbtField{"", TagEnd{}};
+            case TAG_Byte: {
+                const auto name = read_name(buffer);
+                return NbtField{name, static_cast<byte>(*buffer++)};
+            }
+            case TAG_Short: {
+                const auto name = read_name(buffer);
+                return NbtField{name, pull_swapped<int16_t>(buffer)};
+            }
+            case TAG_Int: {
+                const auto name = read_name(buffer);
+                return NbtField{name, pull_swapped<int32_t>(buffer)};
+            }
+            case TAG_Long: {
+                const auto name = read_name(buffer);
+                return NbtField{name, pull_swapped<int64_t>(buffer)};
+            }
+            case TAG_Float: {
+                const auto name = read_name(buffer);
+                return NbtField{name, pull_swapped<float>(buffer)};
+            }
+            case TAG_Double: {
+                const auto name = read_name(buffer);
+                return NbtField{name, pull_swapped<double>(buffer)};
+            }
+            case TAG_Byte_Array: {
+                const auto name = read_name(buffer);
+                return NbtField{name, read_vector<byte>(buffer)};
+            }
+            case TAG_Int_Array: {
+                const auto name = read_name(buffer);
+                return NbtField{name, read_vector<int32_t>(buffer)};
+            }
+            case TAG_Long_Array: {
+                const auto name = read_name(buffer);
+                return NbtField{name, read_vector<int64_t>(buffer)};
+            }
+            case TAG_String: {
+                const auto name = read_name(buffer);
+                return NbtField{name, read_string(buffer)};
+            }
+            case TAG_Compound: {
+                const auto name = read_name(buffer);
+                return NbtField{name, read_compound(buffer)};
+            }
+            case TAG_List: {
+                const auto name = read_name(buffer);
+                return NbtField(name, NbtList::from_buffer(buffer));
+            }
+            default:
+                throw NbtInvalidTagError{tag};
+        }
     }
 
-    template<typename TagWrite, typename OutputIt>
+    template<typename OutputIt>
     void to_buffer(OutputIt &buffer) const {
         std::visit(overloaded{
                        [&](TagEnd) { *buffer++ = NbtTagType::TAG_END; },
-                       [&](byte b) {
-                           TagWrite::write(buffer, NbtTagType::TAG_Byte, name);
-                           *buffer++ = b;
+                       [&](byte value) {
+                           TagWriteFull::write(buffer, NbtTagType::TAG_Byte, name);
+                           *buffer++ = value;
                        },
-                       [&](int16_t b) {
-                           TagWrite::write(buffer, NbtTagType::TAG_Short, name);
-                           push_swapped2(buffer, &b);
+                       [&](int16_t value) {
+                           TagWriteFull::write(buffer, NbtTagType::TAG_Short, name);
+                           push_swapped(buffer, value);
                        },
-                       [&](int32_t b) {
-                           TagWrite::write(buffer, NbtTagType::TAG_Int, name);
-                           push_swapped4(buffer, &b);
+                       [&](int32_t value) {
+                           TagWriteFull::write(buffer, NbtTagType::TAG_Int, name);
+                           push_swapped(buffer, value);
                        },
-                       [&](int64_t b) {
-                           TagWrite::write(buffer, NbtTagType::TAG_Long, name);
-                           push_swapped8(buffer, &b);
+                       [&](int64_t value) {
+                           TagWriteFull::write(buffer, NbtTagType::TAG_Long, name);
+                           push_swapped(buffer, value);
                        },
-                       [&](float f) {
-                           TagWrite::write(buffer, NbtTagType::TAG_Float, name);
-                           push_swapped4(buffer, &f);
+                       [&](float value) {
+                           TagWriteFull::write(buffer, NbtTagType::TAG_Float, name);
+                           push_swapped(buffer, value);
                        },
-                       [&](double d) {
-                           TagWrite::write(buffer, NbtTagType::TAG_Double, name);
-                           push_swapped4(buffer, &d);
+                       [&](double value) {
+                           TagWriteFull::write(buffer, NbtTagType::TAG_Double, name);
+                           push_swapped(buffer, value);
                        },
                        [&](std::vector<byte> const &arr) {
-                           TagWrite::write(buffer, NbtTagType::TAG_Byte_Array, name);
-                           const auto len = static_cast<int32_t>(arr.size());
-                           push_swapped2(buffer, &len);
-                           std::copy(arr.begin(), arr.end(), buffer);
-                           buffer += len;
+                           TagWriteFull::write(buffer, NbtTagType::TAG_Byte_Array, name);
+                           write_vector(buffer, arr);
                        },
                        [&](std::string const &str) {
-                           TagWrite::write(buffer, NbtTagType::TAG_String, name);
-                           const auto len = static_cast<int32_t>(str.size());
-                           push_swapped2(buffer, &len);
-                           std::copy(str.begin(), str.end(), buffer);
-                           buffer += len;
-                       },
-                       [&](NbtList const &list) {
+                           TagWriteFull::write(buffer, NbtTagType::TAG_String, name);
+                           write_len(buffer, str.size());
+                           buffer = std::copy(str.begin(), str.end(), buffer);
                        },
                        [&](NbtCompound const &compound) {
-                           TagWrite::write(buffer, NbtTagType::TAG_Compound, name);
-                           for (auto const &field: compound) {
-                               field.to_buffer(buffer);
-                           }
-                           *buffer++ = NbtTagType::TAG_END;
+                           TagWriteFull::write(buffer, NbtTagType::TAG_Compound, name);
+                           write_compound(buffer, compound);
                        },
                        [&](std::vector<int> const &arr) {
-                           throw std::runtime_error("not implemented");
+                           TagWriteFull::write(buffer, NbtTagType::TAG_Int_Array, name);
+                           write_vector(buffer, arr);
                        },
                        [&](std::vector<int64_t> const &arr) {
-                           throw std::runtime_error("not implemented");
+                           TagWriteFull::write(buffer, NbtTagType::TAG_Long_Array, name);
+                           write_vector(buffer, arr);
                        },
+                       [&](NbtList const &list) {
+                           TagWriteFull::write(buffer, NbtTagType::TAG_List, name);
+                           list.to_buffer(buffer);
+                       }
                    }, value);
     }
 
@@ -254,6 +185,15 @@ struct NbtField {
 
     // ---- Comp -------------------------------------------------------------------------------------------------------
     bool operator==(const NbtField &) const = default;
+
+    // ---- Properties -------------------------------------------------------------------------------------------------
+    bool is_end() const {
+        return std::holds_alternative<TagEnd>(value);
+    }
+
+    bool is_compound() const {
+        return std::holds_alternative<NbtCompound>(value);
+    }
 };
 
 inline std::ostream &operator<<(std::ostream &os, NbtField const &nbt) {
@@ -311,18 +251,24 @@ inline std::ostream &operator<<(std::ostream &os, NbtField const &nbt) {
     return os;
 }
 
-inline NbtCompound::const_iterator NbtCompound::find(std::string_view const key) const {
-    return std::find_if(begin(), end(), [&key](NbtField const &field) {
-        return field.name == key;
-    });
+template<typename InputIt>
+NbtCompound read_compound(InputIt &buffer) {
+    NbtCompound::Fields fields;
+
+    while (true) {
+        const auto field = NbtField::from_buffer(buffer);
+        if (field.is_end()) { break; }
+        fields.push_back(field);
+    }
+    return NbtCompound{fields};
 }
 
-inline NbtCompound::const_iterator NbtCompound::find_path(std::span<std::string> const path) const {
-    const auto found = find(path[0]);
-
-    if (found == end()) throw NbtError::FieldNotFound;
-    if (path.size() == 1) return found;
-
-    return found->find_path(path.subspan(1, path.size() - 1));
+template<typename OutputIt>
+void write_compound(OutputIt &buffer, NbtCompound const &compound) {
+    for (auto const &field: compound.fields) {
+        field.to_buffer(buffer);
+    }
+    *buffer++ = NbtTagType::TAG_END;
 }
+
 #endif //FIELD_HPP
