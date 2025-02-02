@@ -18,7 +18,7 @@ jobs:
     - name: Conan version
       run: echo "${{ steps.conan.outputs.version }}"
     - name: Run CMake
-      run: cd ${{ github.workspace }} && cmake -B build  -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=conan_provider.cmake -S .
+      run: cd ${{ github.workspace }} && cmake -B build  -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=conan_provider.cmake -S . -DCMAKE_BUILD_TYPE=Debug
     - name: Run Make
       run: cd ${{ github.workspace }} && cmake --build build
     - name: Run Tests
