@@ -1,6 +1,9 @@
 .vs
 .cache
 .idea
+
 builds
+build
+
 cmake-build-*
 compile_commands.json
