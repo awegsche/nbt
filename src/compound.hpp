@@ -6,6 +6,7 @@
 #define COMPOUND_HPP
 
 #include <vector>
+#include <string>
 #include <string_view>
 #include <span>
 
