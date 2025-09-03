@@ -24,19 +24,15 @@ jobs:
             vcpkgDirectory: '${{ github.workspace }}/vcpkg'
       - name: Install Build Wrapper
         uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v5
-      - name: Run cmake
-        run: |
-          export VCPKG_ROOT=${{ github.workspace }}/vcpkg
-          cmake --preset debug-clang
+      - name: Run CMake
+        run: cd ${{ github.workspace }} && cmake -B build -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
       - name: Run Build Wrapper
         run: |
-          mkdir ${{ env.BUILD_WRAPPER_OUT_DIR }}
-          mkdir ${{ env.BUILD_WRAPPER_OUT_DIR }}/build
-          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build ${{ env.BUILD_WRAPPER_OUT_DIR }}/build
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Put the name of your token here
         with:
           args: >
-            --define sonar.cfamily.compile-commands="${{ env.BUILD_WRAPPER_OUT_DIR }}/build/compile_commands.json"
+            --define sonar.cfamily.compile-commands="${{ github.workspace }}/build/compile_commands.json"
