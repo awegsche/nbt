@@ -35,4 +35,4 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Put the name of your token here
         with:
           args: >
-            --define sonar.cfamily.compile-commands="${{ github.workspace }}/build/compile_commands.json"
+            --define sonar.cfamily.compile-commands="build/compile_commands.json"
