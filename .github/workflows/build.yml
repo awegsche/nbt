@@ -1,7 +1,8 @@
 name: Build
 on:
   push:
-    branches: [main]
+    branches: 
+      - main
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:
@@ -22,15 +23,10 @@ jobs:
             # This is the default location of the directory containing vcpkg sources.
             # Change it to the right location if needed.
             vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-      - name: Install Build Wrapper
-        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v5
       - name: Run CMake
-        run: cd ${{ github.workspace }} && cmake -B build -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
-      - name: LS build
-        run: ls build
-      - name: Run Build Wrapper
         run: |
-          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build 
+          mkdir build
+          cmake -B build -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
