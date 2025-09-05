@@ -15,7 +15,7 @@ using byte = unsigned char;
 
 namespace nbt {
 
-enum NbtTagType : uint8_t {
+enum class NbtTagType : uint8_t {
     TAG_END,
     TAG_Byte,
     TAG_Short,
@@ -31,13 +31,16 @@ enum NbtTagType : uint8_t {
     TAG_Long_Array
 };
 
-struct TagEnd {};
+struct TagEnd
+{
+};
 
 // forward decl of nbt_node struc
 struct nbt_node;
 
 /// special struct for holding a compound
-struct compound {
+struct compound
+{
     std::vector<nbt_node> content;
 
     /// Gets the child node with name `key`
@@ -50,8 +53,8 @@ struct compound {
     /// \return returns `nullptr` if no child with name `key` could be found
     nbt_node *operator[](const std::string &key) { return const_cast<nbt_node *>(std::as_const(*this)[key]); }
 
-    template <class T> void insert_node(T const &value, std::string const &name);
-    template <class T> void insert_node(T &&value, std::string const &name);
+    template<class T> void insert_node(T const &value, std::string const &name);
+    template<class T> void insert_node(T &&value, std::string const &name);
 
     std::vector<nbt_node>::iterator begin();
     std::vector<nbt_node>::iterator end();
@@ -60,15 +63,60 @@ struct compound {
     std::vector<nbt_node>::const_iterator end() const;
 };
 
-struct nbt_node {
+struct nbt_list;
 
-    typedef variant<TagEnd, byte, int16_t, int32_t, int64_t, float, double, std::vector<byte>, std::string,
-                    std::vector<nbt_node>, compound, std::vector<int32_t>, std::vector<int64_t>>
-        payload_t;
+using nbt_list_t = std::variant<TagEnd,
+    std::vector<byte>,
+    std::vector<int16_t>,
+    std::vector<int32_t>,
+    std::vector<int64_t>,
+    std::vector<float>,
+    std::vector<double>,
+    std::vector<std::vector<byte>>,
+    std::vector<std::string>,
+    std::vector<nbt_list>,
+    std::vector<compound>,
+    std::vector<std::vector<int32_t>>,
+    std::vector<std::vector<int64_t>>>;
+
+struct nbt_list
+{
+    nbt_list_t content;
+
+    NbtTagType content_type() const { return static_cast<NbtTagType>(content.index()); }
+
+    template<NbtTagType I> auto get() const -> const auto &
+    {
+        return std::get<static_cast<size_t>(std::to_underlying(I))>(content);
+    }
+
+    template<NbtTagType I> auto get() -> auto &
+    {
+        return std::get<static_cast<size_t>(std::to_underlying(I))>(content);
+    }
+};
+
+struct nbt_node
+{
+
+    using payload_t = variant<TagEnd,
+        byte,
+        int16_t,
+        int32_t,
+        int64_t,
+        float,
+        double,
+        std::vector<byte>,
+        std::string,
+        nbt_list,
+        compound,
+        std::vector<int32_t>,
+        std::vector<int64_t>>;
 
     // ---- Init -----------------------------------------------------------------------------------
-    nbt_node() {}
+    nbt_node() = default;
     nbt_node(byte b) : payload(b) {}
+    nbt_node(int16_t s) : payload(s) {}
     nbt_node(int32_t i) : payload(i) {}
     nbt_node(int64_t l) : payload(l) {}
     nbt_node(float f) : payload(f) {}
@@ -76,33 +124,39 @@ struct nbt_node {
     nbt_node(std::vector<byte> b_array) : payload(b_array) {}
     nbt_node(std::vector<int32_t> i32_array) : payload(i32_array) {}
     nbt_node(std::vector<int64_t> i64_array) : payload(i64_array) {}
-    nbt_node(std::vector<nbt_node> list) : payload(list) {}
-    nbt_node(compound &&comp) : payload(comp) {}
+    // add constructor for nbt_list;
+    nbt_node(compound &&comp) : payload(std::move(comp)) {}
+    nbt_node(const compound &comp) : payload(comp) {}
+    nbt_node(const std::string &str) : payload(str) {}
 
     /// get type info (internally handled by std::variant)
     NbtTagType tagtype() const { return static_cast<NbtTagType>(payload.index()); }
 
     /// retrieve content by tagtype
-    template <uint8_t I> auto get() const -> const auto & { return std::get<I>(payload); }
+    template<NbtTagType I> auto get() const -> const auto &
+    {
+        return std::get<static_cast<size_t>(std::to_underlying(I))>(payload);
+    }
 
     /// const version of `get<I>()`
-    template <uint8_t I> auto get() -> auto & { return std::get<I>(payload); }
+    template<NbtTagType I> auto get() -> auto &
+    {
+        return std::get<static_cast<size_t>(std::to_underlying(I))>(payload);
+    }
 
-    template <uint8_t I> const auto &get_field(const std::string &name) const {
-        auto *child = at(name);
-        if (child)
-            return child->get<I>();
+    template<NbtTagType I> const auto &get_field(const std::string &name) const
+    {
+        if (auto *child = at(name); child) return child->get<I>();
         throw std::runtime_error("child doesn't exist");
     }
 
-    nbt_node const *at(const std::string &name) const {
-        if (tagtype() == NbtTagType::TAG_Compound) {
-            return get<NbtTagType::TAG_Compound>()[name];
-        }
+    nbt_node const *at(const std::string &key) const
+    {
+        if (tagtype() == NbtTagType::TAG_Compound) { return get<NbtTagType::TAG_Compound>()[key]; }
         return nullptr;
     }
 
-    nbt_node *at(const std::string &name) { return const_cast<nbt_node *>(std::as_const(*this).at(name)); }
+    nbt_node *at(const std::string &key) { return const_cast<nbt_node *>(std::as_const(*this).at(key)); }
 
     /// nbt_node n == false if it is a TagEnd
     operator bool() { return payload.index() != 0; }
@@ -137,21 +191,25 @@ std::string get_name(const char *&buffer);
 void get_payload(NbtTagType id, const char *&buffer, nbt_node *node);
 
 /// printing indentation level
-struct plevel {
+struct plevel
+{
     uint16_t l;
 };
 
-template <class T> void compound::insert_node(T const &value, std::string const &name) {
+template<class T> void compound::insert_node(T const &value, std::string const &name)
+{
     auto &node = content.emplace_back(value);
-    node.name  = name;
+    node.name = name;
 }
-template <class T> void compound::insert_node(T &&value, std::string const &name) {
-    auto &node = content.emplace_back(std::move(value));
-    node.name  = name;
+template<class T> void compound::insert_node(T &&value, std::string const &name)
+{
+    auto &node = content.emplace_back(value);
+    node.name = name;
 }
-} // namespace nbt
+}// namespace nbt
 
-inline std::ostream &operator<<(std::ostream &os, const nbt::plevel &l) {
+inline std::ostream &operator<<(std::ostream &os, const nbt::plevel &l)
+{
     for (uint16_t i = 0; i < l.l - 1; i++) {
         os.put(' ');
         os.put(' ');

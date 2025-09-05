@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt : CMake project for omcmeas, include source and define
 # project specific logic here.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.20)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
@@ -69,5 +69,29 @@ target_link_libraries(
 		nbtlib
 )
 
+add_executable(test_io
+		tests/test_io.cpp)
+
+target_link_libraries(
+		test_io
+		GTest::gtest_main
+		spdlog::spdlog
+		ZLIB::ZLIB
+		nbtlib
+)
+
+add_executable(unit_tests
+		tests/unit_tests.cpp)
+
+target_link_libraries(
+		unit_tests
+		GTest::gtest_main
+		spdlog::spdlog
+		ZLIB::ZLIB
+		nbtlib
+)
+
 include(GoogleTest)
 gtest_discover_tests(test_primitives)
+gtest_discover_tests(test_io)
+gtest_discover_tests(unit_tests)

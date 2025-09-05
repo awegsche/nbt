@@ -7,13 +7,15 @@
 
 #include "nbt.h"
 
-TEST(HelloTest, BasicAssertions) {
+TEST(HelloTest, BasicAssertions)
+{
     EXPECT_STRNE("hello", "world");
 
     EXPECT_EQ(7 * 6, 42);
 }
 
-TEST(IO, PrimitiveTypes) {
+TEST(IO, PrimitiveTypes)
+{
     using nbt::nbt_node;
     using nbt::NbtTagType;
     using nbt::compound;
@@ -40,7 +42,8 @@ TEST(IO, PrimitiveTypes) {
 }
 
 
-TEST(NBTTags, TAGInt) {
+TEST(NBTTags, TAGInt)
+{
     using nbt::nbt_node;
     using nbt::NbtTagType;
 
@@ -50,7 +53,8 @@ TEST(NBTTags, TAGInt) {
     ASSERT_EQ(int_node.get<NbtTagType::TAG_Int>(), value);
 }
 
-TEST(NBTTags, TAG_Long) {
+TEST(NBTTags, TAG_Long)
+{
     using nbt::nbt_node;
     using nbt::NbtTagType;
     int64_t value = 10;
@@ -59,7 +63,8 @@ TEST(NBTTags, TAG_Long) {
     ASSERT_EQ(int_node.get<NbtTagType::TAG_Long>(), value);
 }
 
-TEST(NBTTags, TAG_Float) {
+TEST(NBTTags, TAG_Float)
+{
     using nbt::nbt_node;
     using nbt::NbtTagType;
     float value = 10.0f;
@@ -68,7 +73,8 @@ TEST(NBTTags, TAG_Float) {
     ASSERT_EQ(int_node.get<NbtTagType::TAG_Float>(), value);
 }
 
-TEST(NBTTags, TAG_Double) {
+TEST(NBTTags, TAG_Double)
+{
     using nbt::nbt_node;
     using nbt::NbtTagType;
     double value = 10.0;
@@ -77,11 +83,52 @@ TEST(NBTTags, TAG_Double) {
     ASSERT_EQ(int_node.get<NbtTagType::TAG_Double>(), value);
 }
 
-TEST(NBTTags, TAG_Byte) {
+TEST(NBTTags, TAG_Byte)
+{
     using nbt::nbt_node;
     using nbt::NbtTagType;
     unsigned char value = 10;
 
     nbt_node int_node = value;
     ASSERT_EQ(int_node.get<NbtTagType::TAG_Byte>(), value);
+}
+
+TEST(NBTTags, TAG_Short)
+{
+    using nbt::nbt_node;
+    using nbt::NbtTagType;
+    int16_t value = 10;
+
+    nbt_node int_node = value;
+    ASSERT_EQ(int_node.get<NbtTagType::TAG_Short>(), value);
+}
+
+TEST(NBTTags, TAG_ByteArray)
+{
+    using nbt::nbt_node;
+    using nbt::NbtTagType;
+    std::vector<unsigned char> value = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+    nbt_node int_node = value;
+    ASSERT_EQ(int_node.get<NbtTagType::TAG_Byte_Array>(), value);
+}
+
+TEST(NBTTags, TAG_IntArray)
+{
+    using nbt::nbt_node;
+    using nbt::NbtTagType;
+    std::vector<int32_t> value = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+    nbt_node int_node = value;
+    ASSERT_EQ(int_node.get<NbtTagType::TAG_Int_Array>(), value);
+}
+
+TEST(NBTTags, TAG_LongArray)
+{
+    using nbt::nbt_node;
+    using nbt::NbtTagType;
+    std::vector<int64_t> value = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+    nbt_node int_node = value;
+    ASSERT_EQ(int_node.get<NbtTagType::TAG_Long_Array>(), value);
 }
