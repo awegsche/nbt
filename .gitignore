@@ -3,3 +3,13 @@
 .idea
 builds
 compile_commands.json
+
+# Sonar Code Context configuration (track settings.json but ignore other files)
+!.sonar-code-context/
+.sonar-code-context/*
+!.sonar-code-context/settings.json
+
+.scannerwork
+.vscode
+Testing/Temporary
+
