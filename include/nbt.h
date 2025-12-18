@@ -113,7 +113,7 @@ struct nbt_node
 
     // ---- Init -----------------------------------------------------------------------------------
     nbt_node() = default;
-    constexpr nbt_node(byte &&b) : payload(std::forward<byte>(b)) {}
+    nbt_node(byte b) : payload(b) {}
     nbt_node(int16_t s) : payload(s) {}
     nbt_node(int32_t i) : payload(i) {}
     nbt_node(int64_t l) : payload(l) {}
@@ -122,7 +122,8 @@ struct nbt_node
     nbt_node(std::vector<byte> b_array) : payload(b_array) {}
     nbt_node(std::vector<int32_t> i32_array) : payload(i32_array) {}
     nbt_node(std::vector<int64_t> i64_array) : payload(i64_array) {}
-    // add constructor for nbt_list;
+    nbt_node(nbt_list &&list) : payload(std::move(list)) {}
+    nbt_node(const nbt_list &list) : payload(list) {}
     nbt_node(compound &&comp) : payload(std::move(comp)) {}
     nbt_node(const compound &comp) : payload(comp) {}
     nbt_node(const std::string &str) : payload(str) {}
@@ -176,11 +177,28 @@ struct nbt_node
     std::string name;
 };
 
-/// Load an nbt_node from file
+/// Load an nbt_node from file (custom format with uncompressed length prefix)
+/// @deprecated Use read_from_file_gzip for Minecraft-compatible files
 nbt_node read_from_file(std::string const &filename);
 
-/// Write file
+/// Write file (custom format with uncompressed length prefix)
+/// @deprecated Use write_to_file_gzip for Minecraft-compatible files
 void write_to_file(nbt_node const &node, std::string const &filename);
+
+/// Load an nbt_node from a standard gzip-compressed NBT file (Minecraft format)
+nbt_node read_from_file_gzip(std::string const &filename);
+
+/// Write an nbt_node to a standard gzip-compressed NBT file (Minecraft format)
+void write_to_file_gzip(nbt_node const &node, std::string const &filename);
+
+/// Load an nbt_node from an uncompressed NBT file
+nbt_node read_from_file_uncompressed(std::string const &filename);
+
+/// Write an nbt_node to an uncompressed NBT file
+void write_to_file_uncompressed(nbt_node const &node, std::string const &filename);
+
+/// Read an nbt_node from a byte buffer
+nbt_node read_from_buffer(const char *buffer, size_t size);
 
 /// Read node from a byte buffer (e.g. from ifstream or zlib)
 nbt_node read_node(const char *&buffer);

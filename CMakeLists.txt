@@ -23,6 +23,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_library (nbtlib
     STATIC
     "src/nbt.cpp"
+    "src/region.cpp"
     )
 
 target_include_directories(nbtlib PUBLIC
@@ -91,7 +92,55 @@ target_link_libraries(
 		nbtlib
 )
 
+add_executable(test_list
+		tests/test_list.cpp)
+
+target_link_libraries(
+		test_list
+		GTest::gtest_main
+		spdlog::spdlog
+		ZLIB::ZLIB
+		nbtlib
+)
+
+add_executable(test_endian
+		tests/test_endian.cpp)
+
+target_link_libraries(
+		test_endian
+		GTest::gtest_main
+		spdlog::spdlog
+		ZLIB::ZLIB
+		nbtlib
+)
+
+add_executable(test_gzip
+		tests/test_gzip.cpp)
+
+target_link_libraries(
+		test_gzip
+		GTest::gtest_main
+		spdlog::spdlog
+		ZLIB::ZLIB
+		nbtlib
+)
+
+add_executable(test_region
+		tests/test_region.cpp)
+
+target_link_libraries(
+		test_region
+		GTest::gtest_main
+		spdlog::spdlog
+		ZLIB::ZLIB
+		nbtlib
+)
+
 include(GoogleTest)
 gtest_discover_tests(test_primitives)
 gtest_discover_tests(test_io)
 gtest_discover_tests(unit_tests)
+gtest_discover_tests(test_list)
+gtest_discover_tests(test_endian)
+gtest_discover_tests(test_gzip)
+gtest_discover_tests(test_region)
