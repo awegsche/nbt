@@ -1,4 +1,6 @@
-# nbt ![release](https://github.com/awegsche/nbt/actions/workflows/release.yml/badge.svg)
+# nbt
+![release](https://github.com/awegsche/nbt/actions/workflows/release.yml/badge.svg)
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=awegsche1_nbt)](https://sonarcloud.io/summary/new_code?id=awegsche1_nbt)
 
 A modern C++ library for reading and writing Minecraft's Named Binary Tag (NBT) format.
 
