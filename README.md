@@ -1,47 +1,129 @@
 # nbt ![release](https://github.com/awegsche/nbt/actions/workflows/release.yml/badge.svg)
 
-Yet another nbt library, for my personal use and learning experience.
+A modern C++ library for reading and writing Minecraft's Named Binary Tag (NBT) format.
 
-## Disclaimer
+## About the NBT Format
 
-I created this project to practice C++ development.
-If you are interested in an NBT library for your language, checkout
-[this wiki entry](https://wiki.vg/NBT) ,
-because "There are many, many libraries for manipulating NBT, written in several languages, and often several per language."
+**Named Binary Tag (NBT)** is a tree-based binary data structure used by Minecraft to store game data including world saves, player data, and item information. The format is designed to be simple, compact, and efficient for serialization.
+
+### Tag Types
+
+NBT supports 13 tag types:
+
+| ID | Tag Type | Description | C++ Type |
+|----|----------|-------------|----------|
+| 0 | `TAG_End` | Marks the end of a compound tag | - |
+| 1 | `TAG_Byte` | Signed 8-bit integer (-128 to 127) | `byte` |
+| 2 | `TAG_Short` | Signed 16-bit integer | `int16_t` |
+| 3 | `TAG_Int` | Signed 32-bit integer | `int32_t` |
+| 4 | `TAG_Long` | Signed 64-bit integer | `int64_t` |
+| 5 | `TAG_Float` | 32-bit IEEE 754 floating point | `float` |
+| 6 | `TAG_Double` | 64-bit IEEE 754 floating point | `double` |
+| 7 | `TAG_Byte_Array` | Array of signed bytes | `std::vector<byte>` |
+| 8 | `TAG_String` | UTF-8 string (length-prefixed) | `std::string` |
+| 9 | `TAG_List` | List of unnamed tags of the same type | `nbt_list` |
+| 10 | `TAG_Compound` | Collection of named tags | `compound` |
+| 11 | `TAG_Int_Array` | Array of signed 32-bit integers | `std::vector<int32_t>` |
+| 12 | `TAG_Long_Array` | Array of signed 64-bit integers | `std::vector<int64_t>` |
+
+### Binary Structure
+
+Each tag in the binary format consists of:
+1. **Tag type** (1 byte) - The tag type ID
+2. **Name** (for named tags) - A length-prefixed UTF-8 string
+3. **Payload** - The tag's data (format depends on tag type)
+
+NBT files are typically compressed with gzip or zlib compression. This library handles both compressed and uncompressed files.
+
+For more details on the NBT specification, see the [Minecraft Wiki - NBT format](https://minecraft.fandom.com/wiki/NBT_format).
 
 ## Usage
 
-The goal is to provide a modern C++ library with ergonomy as main focus (see [nlohmann-json](https://github.com/nlohmann/json) for an excellent example).
+The library provides an ergonomic, modern C++ API inspired by [nlohmann-json](https://github.com/nlohmann/json).
+
+### Creating NBT Data
 
 ```cpp
 using nbt::compound, nbt::nbt_node;
 
-// create root object of type compound
+// Create root object of type compound
 compound root{};
 
-// insert some elements. The tag types are deduced from the value types (int -> TAG_Int, std::vector<int> -> TAG_IntArray, etc.)
-root.insert_node(1024, "width"); 
+// Insert elements - tag types are automatically deduced from value types
+root.insert_node(1024, "width");              // TAG_Int
+root.insert_node(768, "height");              // TAG_Int
+root.insert_node(3.14159f, "pi");             // TAG_Float
+root.insert_node("Hello NBT", "greeting");    // TAG_String
 
-std::vector<int> data{};
-/* ... setup the data ... */
-root.insert_node(data, "data");
+std::vector<int> data{1, 2, 3, 4, 5};
+root.insert_node(data, "data");               // TAG_Int_Array
 
-// write to a file
-nbt::write_to_file(nbt_node{root}, "filename.nbt");
+// Write to file (automatically gzip compressed)
+nbt::write_to_file(nbt_node{root}, "output.nbt");
 ```
 
-## Road map and known issues
+### Reading NBT Data
 
-- `std::map` like insertion
+```cpp
+// Read from file
+nbt::nbt_node node = nbt::read_from_file("level.dat");
 
-  ```cpp
-  node["width"] = 1024;
-  ```
-  
-- Fix region format loading
+// Access compound children by name
+if (auto* data = node.at("Data")) {
+    // Get typed values
+    auto& level_name = data->get_field<nbt::NbtTagType::TAG_String>("LevelName");
+    auto& spawn_x = data->get_field<nbt::NbtTagType::TAG_Int>("SpawnX");
+}
 
-  Minecraft region files can be loaded. However, I didn't update this in a long time and it might not be compatible with current region formats.
-  
-- Add more testing and static analysis
+// Pretty print the structure
+std::cout << node << std::endl;
+```
 
-  As I use this project to practice some best practices, it needs more testing and clang-tidy / warnings as errors etc.
+### Nested Compounds and Lists
+
+```cpp
+compound player{};
+player.insert_node("Steve", "Name");
+
+compound position{};
+position.insert_node(100.5, "X");
+position.insert_node(64.0, "Y");
+position.insert_node(-200.3, "Z");
+player.insert_node(std::move(position), "Pos");
+
+nbt::write_to_file(nbt_node{player}, "player.dat");
+```
+
+## Features
+
+- **Type-safe access** via `std::variant` and templated getters
+- **Automatic type deduction** when inserting values
+- **Gzip compression** support for reading and writing
+- **Pretty printing** for debugging and inspection
+- **Region file support** for Minecraft world data (experimental)
+
+## Building
+
+This project uses CMake and vcpkg for dependency management:
+
+```bash
+cmake --preset=debug
+cmake --build builds/debug
+```
+
+### Dependencies
+
+- **zlib** - For gzip compression/decompression
+- **Google Test** - For unit testing (optional)
+
+## Road Map
+
+- [ ] `std::map`-like insertion syntax: `node["width"] = 1024;`
+- [ ] Update region format support for latest Minecraft versions
+- [ ] SNBT (Stringified NBT) parsing and output
+
+## References
+
+- [Minecraft Wiki - NBT format](https://minecraft.fandom.com/wiki/NBT_format)
+- [Minecraft Wiki - Region file format](https://minecraft.fandom.com/wiki/Region_file_format)
+- [wiki.vg - NBT](https://wiki.vg/NBT)
