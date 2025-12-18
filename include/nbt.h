@@ -1,8 +1,6 @@
 #pragma once
-#include <array>
 #include <cstdint>
 #include <iostream>
-#include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -115,7 +113,7 @@ struct nbt_node
 
     // ---- Init -----------------------------------------------------------------------------------
     nbt_node() = default;
-    nbt_node(byte b) : payload(b) {}
+    constexpr nbt_node(byte &&b) : payload(std::forward<byte>(b)) {}
     nbt_node(int16_t s) : payload(s) {}
     nbt_node(int32_t i) : payload(i) {}
     nbt_node(int64_t l) : payload(l) {}
@@ -146,11 +144,11 @@ struct nbt_node
 
     template<NbtTagType I> const auto &get_field(const std::string &name) const
     {
-        if (auto *child = at(name); child) return child->get<I>();
+        if (const auto *child = at(name); child) return child->get<I>();
         throw std::runtime_error("child doesn't exist");
     }
 
-    nbt_node const *at(const std::string &key) const
+    [[nodiscard]] nbt_node const *at(const std::string &key) const
     {
         if (tagtype() == NbtTagType::TAG_Compound) { return get<NbtTagType::TAG_Compound>()[key]; }
         return nullptr;
@@ -159,12 +157,20 @@ struct nbt_node
     nbt_node *at(const std::string &key) { return const_cast<nbt_node *>(std::as_const(*this).at(key)); }
 
     /// nbt_node n == false if it is a TagEnd
-    operator bool() { return payload.index() != 0; }
+    explicit operator bool() const { return payload.index() != 0; }
 
     /// pre-calculates the size for writing to a buffer
-    size_t calc_size() const;
+    [[nodiscard]] size_t calc_size() const;
 
-    std::string pretty_print(uint16_t level = 0) const;
+    [[nodiscard]] std::string pretty_print(uint16_t level = 0) const;
+
+
+    friend std::ostream &operator<<(std::ostream &os, const nbt::nbt_node &n)
+    {
+        os << n.pretty_print();
+        return os;
+    }
+
 
     payload_t payload = TagEnd{};
     std::string name;
@@ -194,6 +200,17 @@ void get_payload(NbtTagType id, const char *&buffer, nbt_node *node);
 struct plevel
 {
     uint16_t l;
+
+    friend std::ostream &operator<<(std::ostream &os, const nbt::plevel &level)
+    {
+        for (uint16_t i = 0; i < level.l - 1; i++) {
+            os.put(' ');
+            os.put(' ');
+        }
+        os.put(' ');
+        os.put(' ');
+        return os;
+    }
 };
 
 template<class T> void compound::insert_node(T const &value, std::string const &name)
@@ -203,20 +220,10 @@ template<class T> void compound::insert_node(T const &value, std::string const &
 }
 template<class T> void compound::insert_node(T &&value, std::string const &name)
 {
-    auto &node = content.emplace_back(value);
+    auto &node = content.emplace_back(std::forward<T>(value));
     node.name = name;
 }
 }// namespace nbt
 
-inline std::ostream &operator<<(std::ostream &os, const nbt::plevel &l)
-{
-    for (uint16_t i = 0; i < l.l - 1; i++) {
-        os.put(' ');
-        os.put(' ');
-    }
-    os.put(' ');
-    os.put(' ');
-    return os;
-}
 
 std::ostream &operator<<(std::ostream &os, const nbt::nbt_node &n);

@@ -10,13 +10,13 @@
 #include <zconf.h>
 #include <zlib.h>
 
-// #include "Timer.h"
-
-
 using std::get;
 using std::string;
 
 constexpr uint16_t MAXLEVEL = 10;
+constexpr size_t MAX_ARRAY_PRINT = 8;
+constexpr size_t PRINT_THRESHOLD = MAX_ARRAY_PRINT + 2;
+;
 
 namespace nbt {
 
@@ -31,7 +31,7 @@ std::string nbt_node::pretty_print(uint16_t level) const
 
     ss << plev;
 
-    if (!name.empty()) ss << "\o{33}[1m" << name << "\o{33}[0m: ";
+    if (!name.empty()) ss << "\33[1m" << name << "\o{33}[0m: ";
 
     switch (tagtype()) {
     case TAG_END:
@@ -42,7 +42,7 @@ std::string nbt_node::pretty_print(uint16_t level) const
         break;
     case TAG_Compound:
         ss << "Compound {";
-        for (nbt_node n : get<TAG_Compound>().content) ss << "\n" << n.pretty_print(level + 1);
+        for (const nbt_node &n : get<TAG_Compound>().content) { ss << "\n" << n.pretty_print(level + 1); }
         ss << "\n" << plev;
 
         ss << "}";
@@ -64,7 +64,6 @@ std::string nbt_node::pretty_print(uint16_t level) const
         break;
     case TAG_List:
         ss << "List {";
-        // for (const nbt_node &n : get<TAG_List>()) { ss << "\n" << n.pretty_print(level + 1); }
         ss << " not implemented ";
         ss << "}" << plev;
         break;
@@ -73,22 +72,22 @@ std::string nbt_node::pretty_print(uint16_t level) const
         break;
     case TAG_Byte_Array: {
         ss << "byte array {";
-        if (const auto &array = get<TAG_Byte_Array>(); array.size() > 10) {
-            for (size_t i = 0; i < 8; i++) ss << static_cast<int>(array[i]) << ", ";
+        if (const auto &array = get<TAG_Byte_Array>(); array.size() > PRINT_THRESHOLD) {
+            for (size_t i = 0; i < MAX_ARRAY_PRINT; i++) { ss << static_cast<int>(array[i]) << ", "; }
             ss << " ...";
         } else {
-            for (int b : array) ss << b << ", ";
+            for (int b : array) { ss << b << ", "; }
         }
         ss << "}";
         break;
     }
     case TAG_Int_Array: {
         ss << "int array {";
-        if (const auto &array = get<TAG_Int_Array>(); array.size() > 10) {
-            for (size_t i = 0; i < 8; i++) ss << array[i] << ", ";
+        if (const auto &array = get<TAG_Int_Array>(); array.size() > PRINT_THRESHOLD) {
+            for (size_t i = 0; i < MAX_ARRAY_PRINT; i++) { ss << array[i] << ", "; }
             ss << " ...";
         } else {
-            for (int b : array) ss << b << ", ";
+            for (int b : array) { ss << b << ", "; }
         }
         ss << "}";
         break;
@@ -99,12 +98,11 @@ std::string nbt_node::pretty_print(uint16_t level) const
     return ss.str();
 }
 
-
 /// read an nbt_node from the given buffer
 nbt_node read_node(const char *&buffer)
 {
     auto id = *reinterpret_cast<const NbtTagType *>(buffer++);
-    if (id == NbtTagType::TAG_END) return nbt_node{};
+    if (id == NbtTagType::TAG_END) { return nbt_node{}; }
 
     nbt_node node{};
     node.name = get_name(buffer);
@@ -127,7 +125,7 @@ std::string get_name(const char *&buffer)
     return name;
 }
 
-void write_name(std::string const &name, std::vector<unsigned char> &buffer)
+static void write_name(std::string const &name, std::vector<unsigned char> &buffer)
 {
 
     auto length = static_cast<int16_t>(name.size());
@@ -136,7 +134,7 @@ void write_name(std::string const &name, std::vector<unsigned char> &buffer)
     for (char c : name) buffer.push_back(c);
 }
 
-void write_payload(const nbt_node &node, std::vector<unsigned char> &buffer)
+static void write_payload(const nbt_node &node, std::vector<unsigned char> &buffer)
 {
     using enum NbtTagType;
 
@@ -188,16 +186,6 @@ void write_payload(const nbt_node &node, std::vector<unsigned char> &buffer)
     }
     case TAG_List: {
         throw std::runtime_error("not implemented");
-        /*
-        auto const &payload = node.get<TAG_List>();
-        // get type from first element
-        auto content_id = payload[0].tagtype();
-        auto len = static_cast<int32_t>(payload.size());
-        buffer.push_back(static_cast<unsigned char>(content_id));
-        push_swapped4(buffer, &len);
-        for (const auto &child : payload) write_payload(child, buffer);
-        */
-        break;
     }
     case TAG_Compound: {
         auto const &payload = node.get<TAG_Compound>().content;
@@ -210,7 +198,7 @@ void write_payload(const nbt_node &node, std::vector<unsigned char> &buffer)
         auto len = static_cast<int16_t>(str.size());
 
         push_swapped2(buffer, &len);
-        for (char c : str) buffer.push_back(c);
+        for (char c : str) { buffer.push_back(c); }
 
         break;
     }
@@ -264,21 +252,7 @@ void get_payload(const NbtTagType id, const char *&buffer, nbt_node *node)
         break;
     }
     case TAG_List: {
-        // auto contentid = *reinterpret_cast<const NbtTagType *>(buffer++);
         throw std::runtime_error("not implemented");
-        /*
-        auto contentid = static_cast<NbtTagType>(*buffer++);
-        int len = __swap4(buffer);
-        buffer += 4;
-        node->payload = std::vector<nbt_node>();
-
-        auto &content = node->get<TAG_List>();
-        for (int i = 0; i < len; i++) {
-            auto &item = content.emplace_back(contentid);
-            get_payload(contentid, buffer, &item);
-        }
-        */
-        break;
     }
     case TAG_Compound: {
         node->payload = compound{};
@@ -322,12 +296,8 @@ void get_payload(const NbtTagType id, const char *&buffer, nbt_node *node)
         auto len = static_cast<size_t>(__swap2(buffer));
         buffer += 2;
 
-        char *buf = new char[len + 1];
-        memcpy(buf, buffer, len);
-        buf[len] = 0;
-        node->payload = std::string(buf);
+        node->payload = std::string(buffer, len);
         buffer += len;
-        delete[] buf;
         break;
     }
     default:
@@ -417,41 +387,6 @@ void write_to_file(const nbt_node &node, const string &filename)
     delete[] compressed_buffer;
 }
 
-// const nbt_node* get_child(const std::string& name, const nbt_node& parent)
-//{
-//	if (parent.tagtype == NbtTagType::TAG_Compound) {
-//        return parent.get<TAG_Compound>()[name];
-//	}
-
-//	std::stringstream ss;
-//	ss << "there is no child\"" << name;
-//	throw std::runtime_error(ss.str().c_str());
-
-//	//return __end__;
-//}
-
-/*
-std::vector<nbt_node*> load_region(const char* filename) {
-        FILE* file = fopen(filename, "rb");
-        std::vector<std::unique_ptr<nbt_node>> chunk;
-        char* buffer = new char[HEADER_SIZE];
-        char* swapped_header = new char[HEADER_SIZE];
-
-        for (int i = 0; i < 10; i++) {
-                fseek(file, i * HEADER_SIZE, SEEK_SET);
-                fread(buffer, 1, HEADER_SIZE, file);
-
-                buffer[3] = 0;
-                swap_bytes(buffer, HEADER_SIZE);
-                int offset = *reinterpret_cast<int*>(buffer) >> 8;
-
-                if (offset == 0) continue;
-                std::cout << "chunk " << i << ", offset = " << offset <<
-std::endl;
-        }
-}
-*/
-
 static size_t calc_name_size(nbt_node const &node) { return 2 + node.name.size(); }
 
 size_t nbt_node::calc_size() const
@@ -471,11 +406,6 @@ size_t nbt_node::calc_size() const
         // - because it doesn't carry a tag (-1)
         // - nor a name (-2 for the int16_t length)
         throw std::runtime_error("not implemented");
-        /*
-        auto acc = [](size_t sum, nbt_node const &a) -> size_t { return sum + a.calc_size() - (size_t)3; };
-        auto const &content = std::get<TAG_List>(payload);
-        return (size_t)1 + calc_name_size(*this) + std::accumulate(content.begin(), content.end(), (size_t)0, acc);
-        */
     }
     case TAG_Byte_Array: {
         std::cout << get<TAG_Byte_Array>().size() << std::endl;
@@ -521,9 +451,3 @@ std::vector<nbt_node>::iterator compound::begin() { return content.begin(); }
 std::vector<nbt_node>::const_iterator compound::end() const { return content.end(); }
 std::vector<nbt_node>::const_iterator compound::begin() const { return content.begin(); }
 }// namespace nbt
-
-std::ostream &operator<<(std::ostream &os, const nbt::nbt_node &n)
-{
-    os << n.pretty_print();
-    return os;
-}
