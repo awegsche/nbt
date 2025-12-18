@@ -1,6 +1,7 @@
 # nbt
 ![release](https://github.com/awegsche/nbt/actions/workflows/release.yml/badge.svg)
-[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=awegsche1_nbt)](https://sonarcloud.io/summary/new_code?id=awegsche1_nbt)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=awegsche1_nbt&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=awegsche1_nbt)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=awegsche1_nbt&metric=coverage)](https://sonarcloud.io/summary/new_code?id=awegsche1_nbt)
 
 A modern C++ library for reading and writing Minecraft's Named Binary Tag (NBT) format.
 
@@ -123,6 +124,10 @@ cmake --build builds/debug
 - [ ] `std::map`-like insertion syntax: `node["width"] = 1024;`
 - [ ] Update region format support for latest Minecraft versions
 - [ ] SNBT (Stringified NBT) parsing and output
+
+## Quality Gate
+
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=awegsche1_nbt)](https://sonarcloud.io/summary/new_code?id=awegsche1_nbt)
 
 ## References
 
